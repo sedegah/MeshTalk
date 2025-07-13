@@ -1,28 +1,24 @@
-// ChatServer.cpp
 #include "common.hpp"
 
 std::map<int, std::string> clients;
 std::mutex clients_mutex;
 
-void broadcast(const std::string& message, int sender) {
+void broadcast(const std::string& message, int senderFd = -1) {
     std::lock_guard<std::mutex> lock(clients_mutex);
     for (const auto& [fd, name] : clients) {
-        if (fd != sender) send(fd, message.c_str(), message.length(), 0);
+        if (fd != senderFd) send(fd, message.c_str(), message.length(), 0);
     }
 }
 
-void sendToClient(const std::string& message, int clientSocket) {
+void sendToClient(int clientSocket, const std::string& message) {
     send(clientSocket, message.c_str(), message.length(), 0);
 }
 
 void handleClient(int clientSocket) {
     char buffer[BUFFER_SIZE];
-
-    // Ask for username
-    sendToClient("Enter username: ", clientSocket);
-    memset(buffer, 0, BUFFER_SIZE);
+    sendToClient(clientSocket, "Enter username: ");
     recv(clientSocket, buffer, BUFFER_SIZE, 0);
-    std::string username = buffer;
+    std::string username = std::string(buffer);
     username.erase(std::remove(username.begin(), username.end(), '\n'), username.end());
 
     {
@@ -38,35 +34,37 @@ void handleClient(int clientSocket) {
         ssize_t bytes = recv(clientSocket, buffer, BUFFER_SIZE, 0);
         if (bytes <= 0) break;
 
-        std::string msg = buffer;
+        std::string msg(buffer);
         msg.erase(std::remove(msg.begin(), msg.end(), '\n'), msg.end());
 
         if (msg == "/quit") break;
         else if (msg == "/who") {
             std::string userList = "Online users:\n";
             std::lock_guard<std::mutex> lock(clients_mutex);
-            for (const auto& [fd, name] : clients) userList += " - " + name + "\n";
-            sendToClient(userList, clientSocket);
+            for (const auto& [fd, name] : clients) {
+                userList += " - " + name + "\n";
+            }
+            sendToClient(clientSocket, userList);
         } else if (msg.rfind("/msg ", 0) == 0) {
-            size_t space = msg.find(' ', 5);
-            if (space != std::string::npos) {
-                std::string target = msg.substr(5, space - 5);
-                std::string content = msg.substr(space + 1);
+            size_t split = msg.find(' ', 5);
+            if (split != std::string::npos) {
+                std::string target = msg.substr(5, split - 5);
+                std::string content = msg.substr(split + 1);
 
                 std::lock_guard<std::mutex> lock(clients_mutex);
-                auto it = std::find_if(clients.begin(), clients.end(), [&](auto& p) {
-                    return p.second == target;
-                });
+                auto it = std::find_if(clients.begin(), clients.end(),
+                    [&](const auto& pair) { return pair.second == target; });
+
                 if (it != clients.end()) {
-                    std::string pm = "[Private] " + username + ": " + content + "\n";
-                    send(it->first, pm.c_str(), pm.length(), 0);
+                    std::string privMsg = "[Private] " + username + ": " + content + "\n";
+                    send(it->first, privMsg.c_str(), privMsg.length(), 0);
                 } else {
-                    sendToClient("User not found.\n", clientSocket);
+                    sendToClient(clientSocket, "User not found.\n");
                 }
             }
         } else {
-            std::string finalMsg = username + ": " + msg + "\n";
-            broadcast(finalMsg, clientSocket);
+            std::string broadcastMsg = username + ": " + msg + "\n";
+            broadcast(broadcastMsg, clientSocket);
         }
     }
 
@@ -75,10 +73,10 @@ void handleClient(int clientSocket) {
         std::lock_guard<std::mutex> lock(clients_mutex);
         std::string leaveMsg = username + " left the chat\n";
         clients.erase(clientSocket);
-        broadcast(leaveMsg, -1);
+        broadcast(leaveMsg);
     }
 }
-
+    
 int main() {
     int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     sockaddr_in serverAddr{};
@@ -89,10 +87,10 @@ int main() {
     bind(serverSocket, (sockaddr*)&serverAddr, sizeof(serverAddr));
     listen(serverSocket, 5);
 
-    std::cout << "MeshTalk Server started on port " << PORT << std::endl;
+    std::cout << "MeshTalk Server running on port " << PORT << "...\n";
 
     while (true) {
-        sockaddr_in clientAddr;
+        sockaddr_in clientAddr{};
         socklen_t clientSize = sizeof(clientAddr);
         int clientSocket = accept(serverSocket, (sockaddr*)&clientAddr, &clientSize);
         std::thread(handleClient, clientSocket).detach();
