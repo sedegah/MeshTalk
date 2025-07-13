@@ -1,4 +1,3 @@
-// ChatClient.cpp
 #include "common.hpp"
 
 void receiveMessages(int socket) {
@@ -32,16 +31,14 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::cout << "Connected to MeshTalk server.\n";
-
     std::thread(receiveMessages, sock).detach();
 
-    std::string msg;
+    std::string input;
     while (true) {
-        std::getline(std::cin, msg);
-        if (msg.empty()) continue;
-        send(sock, msg.c_str(), msg.size(), 0);
-        if (msg == "/quit") break;
+        std::getline(std::cin, input);
+        if (input.empty()) continue;
+        send(sock, input.c_str(), input.size(), 0);
+        if (input == "/quit") break;
     }
 
     close(sock);
