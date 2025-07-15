@@ -1,4 +1,3 @@
-```markdown
 # MeshTalk
 
 **MeshTalk** is a terminal-based local network chat system written in C++. It enables multiple users to communicate in real time over a TCP/IP network using a client-server model. MeshTalk includes support for usernames, public chat, private messaging, and basic server-side user management.
