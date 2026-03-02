@@ -1,0 +1,11 @@
+name = "meshtalk-bootstrap"
+main = "src/index.js"
+compatibility_date = "2026-03-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "meshtalk-bootstrap-db"
+database_id = "replace-with-d1-database-id"
+
+[observability]
+enabled = true

@@ -7,10 +7,10 @@
 ## Features
 
 - Multithreaded chat server (handles multiple clients concurrently)
-- Unique usernames per session
-- Real-time public chat
+- Authenticated usernames (auto-register on first login, verify on reconnect)
+- Real-time public chat with timestamps and encrypted client-server transport
 - Private messaging: `/msg <username> <message>`
-- View online users: `/who`
+- View online users: `/who` or `/online`
 - Clean disconnection: `/quit`
 - Fully terminal-based — no external libraries required
 - Supports LAN connections (clients can connect from other devices on the same network)
@@ -88,8 +88,10 @@ You will be prompted to enter a **username**. After that, you can chat with othe
 
 | Command                 | Description                                    |
 | ----------------------- | ---------------------------------------------- |
-| `/who`                  | Lists all currently connected usernames        |
+| `/who` or `/online`     | Lists all currently connected usernames        |
 | `/msg <user> <message>` | Sends a private message to `<user>`            |
+| `/history [user|public]`| Shows recent chat history (public or private)  |
+| `/help`                 | Shows command help                               |
 | `/quit`                 | Disconnects from the chat and exits the client |
 
 ---
@@ -125,6 +127,8 @@ Enter username: bob
 
 * Currently supports unencrypted TCP only (no TLS/SSL)
 * No authentication or persistent session tracking
+* In-memory history only (not persisted after server restart)
+* User credentials are stored as salted hashes in `users.db`
 * Not designed for public internet use — LAN only
 
 ---
@@ -150,4 +154,45 @@ This project is licensed under the MIT License. See the `LICENSE` file for more 
 Created by Kimathi Sedegah — Computer Science student passionate about networks and systems programming.
 
 Feel free to fork or contribute!
+
+## MeshTalk v2 documentation
+
+See [`docs/MeshTalk-Network-v2-System-Documentation.md`](docs/MeshTalk-Network-v2-System-Documentation.md) for the full v2 architecture, module design, and roadmap.
+
+
+## Cloudflare backend (v2 bootstrap prep)
+
+A Cloudflare Worker + D1 bootstrap backend is included in `cloudflare-backend/` for peer discovery, presence heartbeats, offline encrypted message queueing, optional multi-device encrypted key storage, and API audit logging.
+
+- Worker entrypoint: `cloudflare-backend/src/index.js`
+- Worker config: `cloudflare-backend/wrangler.toml`
+- D1 schema: `cloudflare-backend/schema.sql`
+- Setup guide: `cloudflare-backend/README.md`
+
+
+## Complete setup (local + Cloudflare bootstrap)
+
+Use the setup script to prepare the full project:
+
+```bash
+./scripts/setup.sh
+```
+
+This will:
+- build the C++ `server` and `client`
+- install Cloudflare backend dependencies (if `npm` is available)
+- run a syntax check on the Worker entrypoint
+
+Then complete backend provisioning:
+1. Create a D1 database for MeshTalk bootstrap and set `database_id` in `cloudflare-backend/wrangler.toml`.
+2. Apply schema with `npx wrangler d1 execute meshtalk-bootstrap-db --file=./schema.sql`.
+3. Start backend locally with:
+   ```bash
+   cd cloudflare-backend
+   npm run dev
+   ```
+4. Deploy with:
+   ```bash
+   npm run deploy
+   ```
 

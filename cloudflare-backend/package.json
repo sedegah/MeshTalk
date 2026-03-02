@@ -1,0 +1,14 @@
+{
+  "name": "meshtalk-cloudflare-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare Worker bootstrap backend for MeshTalk v2",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "check": "node --check src/index.js"
+  },
+  "devDependencies": {
+    "wrangler": "^3.99.0"
+  }
+}
