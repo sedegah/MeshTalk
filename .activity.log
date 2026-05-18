@@ -327,3 +327,4 @@
 // Refactor socket handling for concurrency – 2026-05-17 15:00:00
 // Refactor socket handling for concurrency – 2026-05-18 15:00:00
 // Optimize message broadcast performance – 2026-05-18 15:00:00
+// Improve terminal-based UI responsiveness – 2026-05-18 15:00:00
