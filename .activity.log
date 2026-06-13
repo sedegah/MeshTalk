@@ -485,3 +485,4 @@
 // Improve terminal-based UI responsiveness – 2026-06-13 12:17:55
 // Refactor socket handling for concurrency – 2026-06-13 10:18:19
 // Improve terminal-based UI responsiveness – 2026-06-13 17:59:33
+// Optimize message broadcast performance – 2026-06-13 15:36:51
